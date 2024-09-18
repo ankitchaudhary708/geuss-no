@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino Number Selector Game</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: url('https://images.unsplash.com/photo-1501681732280-3f94d13c49f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&q=80&w=1080') no-repeat center center fixed; 
+            background-size: cover;
+            color:black;
+            text-align: center;
+            padding: 50px;
+            font-family: 'Arial', sans-serif;
+        }
+        h1 {
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        }
+        .number-list {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .number {
+            font-size: 2.5em;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s, background-color 0.3s;
+            border: 2px solid transparent;
+        }
+        .number:hover {
+            transform: scale(1.1);
+        }
+        .even {
+            background-color: rgba(255, 0, 0, 0.8);
+        }
+        .odd {
+            background-color: rgba(0, 0, 255, 0.8);
+        }
+        .selected {
+            border: 2px solid #ffcc00;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .btn {
+            margin: 20px 0;
+            font-size: 1.5em;
+        }
+        #resultMessage {
+            font-size: 1.8em;
+            margin-top: 20px;
+        }
+        .selection-container {
+            margin-top: 30px;
+        }
+        .range-input {
+            display: none;
+            margin: 20px 0;
+        }
+        .input-range {
+            width: 40%;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Casino Number Selector Game</h1>
+    <button id="startGame" class="btn btn-danger">Start Game</button>
+
+    <h2 id="computerNumberMessage"></h2>
+
+    <div class="selection-container">
+        <label for="selectionType">Select Category:</label>
+        <select id="selectionType" class="form-control">
+            <option value="single">Single Number</option>
+            <option value="range">Range</option>
+            <option value="even">Even Numbers</option>
+            <option value="odd">Odd Numbers</option>
+        </select>
+    </div>
+
+    <div class="number-list" id="numberList"></div>
+
+    <div class="range-input" id="rangeInputs">
+        <input type="number" id="rangeStart" placeholder="Start" class="form-control input-range" min="1" max="100">
+        <input type="number" id="rangeEnd" placeholder="End" class="form-control input-range" min="1" max="100">
+    </div>
+
+    <button id="submitSelection" class="btn btn-success" disabled>Submit Selection</button>
+    <h2 id="resultMessage"></h2>
+
+    <script>
+        let computerNumber = null;
+
+        // Start the game and generate random numbers
+        document.getElementById('startGame').addEventListener('click', () => {
+            generateRandomNumbers();
+            document.getElementById('computerNumberMessage').textContent = 'Choose your selection!';
+            document.getElementById('resultMessage').textContent = ''; // Clear previous result message
+        });
+
+        // Generate 30 unique random numbers between 1 and 100
+        function generateRandomNumbers() {
+            const uniqueNumbers = new Set();
+            while (uniqueNumbers.size < 10) {
+                uniqueNumbers.add(Math.floor(Math.random() * 100) + 1);
+            }
+            displayNumbers(Array.from(uniqueNumbers));
+        }
+
+        // Display numbers in the UI
+        function displayNumbers(numbers) {
+            const numberListDiv = document.getElementById('numberList');
+            numberListDiv.innerHTML = ''; // Clear previous numbers
+
+            numbers.forEach(num => {
+                const numberDiv = document.createElement('div');
+                numberDiv.textContent = num;
+                numberDiv.className = `number ${num % 2 === 0 ? 'even' : 'odd'}`;
+                numberDiv.addEventListener('click', () => selectNumber(num));
+                numberListDiv.appendChild(numberDiv);
+            });
+
+            document.getElementById('submitSelection').disabled = false; // Enable submit button
+        }
+
+        let selectedNumbers = new Set();
+
+        // Select a number from the list
+        function selectNumber(num) {
+            const numberDivs = document.querySelectorAll('.number');
+            numberDivs.forEach(n => n.classList.remove('selected')); // Clear previous selection
+            selectedNumbers.clear();
+
+            selectedNumbers.add(num); // Select the clicked number
+
+            const selectedNumberDiv = [...numberDivs].find(n => n.textContent == num);
+            selectedNumberDiv.classList.add('selected');
+        }
+
+        // Show/hide range inputs based on selection type
+        document.getElementById('selectionType').addEventListener('change', (e) => {
+            const rangeInputs = document.getElementById('rangeInputs');
+            rangeInputs.style.display = e.target.value === 'range' ? 'block' : 'none';
+        });
+
+        // Check if the selected number matches the computer's number
+        document.getElementById('submitSelection').addEventListener('click', () => {
+            const resultMessage = document.getElementById('resultMessage');
+            const selectionType = document.getElementById('selectionType').value;
+
+            // Generate a computer number for checking
+            computerNumber = Math.floor(Math.random() * 100) + 1;
+
+            if (selectionType === 'single' && selectedNumbers.size === 1) {
+                const selectedNumber = Array.from(selectedNumbers)[0];
+                if (selectedNumber === computerNumber) {
+                    resultMessage.textContent = `🎉 You win! You selected ${selectedNumber}, and the computer generated ${computerNumber}. 🎉`;
+                } else {
+                    resultMessage.textContent = `😞 You lose! You selected ${selectedNumber}, but the computer generated ${computerNumber}.`;
+                }
+            } else if (selectionType === 'range') {
+                const start = parseInt(document.getElementById('rangeStart').value);
+                const end = parseInt(document.getElementById('rangeEnd').value);
+                if (start > end || start < 1 || end > 100) {
+                    resultMessage.textContent = 'Please select a valid range.';
+                } else if (computerNumber >= start && computerNumber <= end) {
+                    resultMessage.textContent = `🎉 You win! The computer generated ${computerNumber}, which is in your selected range. 🎉`;
+                } else {
+                    resultMessage.textContent = `😞 You lose! The computer generated ${computerNumber}, which is outside your selected range.`;
+                }
+            } else if (selectionType === 'even' || selectionType === 'odd') {
+                const isEven = selectionType === 'even';
+                const computerIsEven = computerNumber % 2 === 0;
+                if (isEven && computerIsEven) {
+                    resultMessage.textContent = `🎉 You win! The computer generated ${computerNumber}, which is even. 🎉`;
+                } else if (!isEven && !computerIsEven) {
+                    resultMessage.textContent = `🎉 You win! The computer generated ${computerNumber}, which is odd. 🎉`;
+                } else {
+                    resultMessage.textContent = `😞 You lose! The computer generated ${computerNumber}, which is ${computerIsEven ? 'even' : 'odd'}.`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
